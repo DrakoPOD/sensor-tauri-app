@@ -1,32 +1,27 @@
 <script lang="ts" setup>
-import WebSocket
-  from '@tauri-apps/plugin-websocket';
 import { ref } from 'vue';
+import { startMqtt } from '@/composables/mqtt';
+import { useTheme } from 'vuetify';
 
-import GraphCard from './components/GraphCard.vue';
+import GraphView from '@/views/GraphView.vue';
 
+import { useCardStore } from './store/storeCards';
+
+const theme = useTheme();
 const drawer = ref(false);
 
-async function startClient() {
-  let err: string | null = null;
 
-  const ws = await WebSocket.connect('ws://localhost:8080').catch((e) => {
-    err = e;
-  }) as WebSocket;
+startMqtt();
 
-  if (err) {
-    console.error(err);
-    return;
-  }
+const storeCard = useCardStore();
 
-  ws.addListener((msg) => {
-    console.log(msg);
-  })
-
-  await ws.send('Hello from Vue!');
+function addCard() {
+  storeCard.addCard();
 }
 
-startClient();
+function toggleTheme() {
+  theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark';
+}
 
 </script>
 
@@ -40,7 +35,9 @@ startClient();
         </template>
 
         <v-spacer></v-spacer>
-
+        <v-btn @click="toggleTheme" icon>
+          <v-icon>{{ theme.global.current.value.dark ? 'mdi-moon-waning-crescent' : 'mdi-weather-sunny' }}</v-icon>
+        </v-btn>
         <v-btn icon>
           <v-icon>mdi-dots-vertical</v-icon>
         </v-btn>
@@ -54,12 +51,26 @@ startClient();
 
       <v-main>
         <v-container>
-          <h1>Main Content</h1>
-          <GraphCard />
+          <GraphView />
         </v-container>
       </v-main>
+      <v-footer elevation="10" class="action-bar" app>
+        <v-btn :disabled="storeCard.cardLImitReached()" @click="addCard" icon="mdi-thermometer-plus"></v-btn>
+        <v-btn @click="" icon="mdi-camera-control"></v-btn>
+        <v-btn :disabled="storeCard.cards.length < 1" @click="" icon="mdi-record-circle"></v-btn>
+        <v-btn @click="" icon="mdi-flag"></v-btn>
+      </v-footer>
     </v-app>
   </v-responsive>
 </template>
 
-<style></style>
+<style scoped>
+.action-bar {
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 1rem;
+}
+</style>
