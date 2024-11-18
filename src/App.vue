@@ -6,6 +6,7 @@ import { useTheme } from 'vuetify';
 import GraphView from '@/views/GraphView.vue';
 
 import { useCardStore } from './store/storeCards';
+import { useStore } from './store/store';
 
 const theme = useTheme();
 const drawer = ref(false);
@@ -14,6 +15,7 @@ const drawer = ref(false);
 startMqtt();
 
 const storeCard = useCardStore();
+const store = useStore();
 
 function addCard() {
   storeCard.addCard();
@@ -55,9 +57,11 @@ function toggleTheme() {
         </v-container>
       </v-main>
       <v-footer elevation="10" class="action-bar" app>
-        <v-btn :disabled="storeCard.cardLImitReached()" @click="addCard" icon="mdi-thermometer-plus"></v-btn>
+        <v-btn :disabled="storeCard.cardLImitReached() || store.allInUse() || store.recording" @click="addCard"
+          icon="mdi-thermometer-plus"></v-btn>
         <v-btn @click="" icon="mdi-camera-control"></v-btn>
-        <v-btn :disabled="storeCard.cards.length < 1" @click="" icon="mdi-record-circle"></v-btn>
+        <v-btn icon :disabled="storeCard.cards.length < 1" @click="store.startRecording()"><v-icon
+            color="red">mdi-record-circle</v-icon></v-btn>
         <v-btn @click="" icon="mdi-flag"></v-btn>
       </v-footer>
     </v-app>

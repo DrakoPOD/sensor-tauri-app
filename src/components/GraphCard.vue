@@ -2,10 +2,11 @@
 import uPlot from 'uplot';
 import { useTheme } from 'vuetify';
 
-import { computed, onMounted, ref, watch, WatchHandle, } from 'vue';
+import { computed, onMounted, ref, watch, WatchHandle, onBeforeUnmount } from 'vue';
 
-import { useStore, SensorData, SensorsTypes } from '@/store/store';
+import { useStore, type SensorData, type SensorsTypes, type Axis } from '@/store/store';
 import { Card, useCardStore } from '@/store/storeCards';
+import { on } from 'events';
 
 const props = defineProps<{
   card: Card;
@@ -19,12 +20,9 @@ const storeCard = useCardStore();
 let mounted = false;
 
 interface Device {
-  device: string, key: SensorsTypes;
+  device: string, key: SensorsTypes; id: string; title: string; vector: boolean;
 }
 
-
-
-const device = ref<Device>({ device: 'device2', key: 'temp' });
 const axis = ref<string>('x');
 const selected = ref<SensorsTypes>('temp');
 
@@ -37,20 +35,40 @@ const data: uPlot.AlignedData = [
   [],    // y-values (series 1)
 ];
 
-watch(() => [axis.value, device.value, selected.value], () => {
+const devices = computed(() => {
+  return Object.keys(store.sensors).map((device) => {
+    return store.sensors[device].map((sensor) => {
+      return {
+        value: {
+          device,
+          key: sensor.key,
+          id: sensor.id,
+          title: sensor.name,
+          vector: sensor.vector,
+        },
+        title: sensor.name,
+        inUse: sensor.inUse,
+      };
+    });
+  }).flat().filter((sensor) => !sensor.inUse);
+});
+
+const device = ref<Device>(devices.value[0].value);
+store.changeSensorInUse(device.value.device, device.value.id, '', '');
+
+watch(() => [axis.value, device.value], () => {
   // find card in store and update it
   const cardInStore = storeCard.cards.find(c => c.id === props.card.id);
   const newCard = {
-    axi: axis.value,
+    axi: axis.value as Axis,
     activeSensor: device.value.device,
-    activeSample: selected.value,
+    activeSample: device.value.key,
+    vector: device.value.vector,
   };
   if (cardInStore) {
     storeCard.updateCard(props.card.id, newCard);
   }
 }, { deep: true, immediate: true });
-
-const devices = computed(() => Object.keys(store.sensors).map((key) => ({ value: { device: key, key: store.sensors[key].key }, title: store.sensors[key].name })));
 
 const opts: uPlot.Options = {
   title: "My Chart",
@@ -98,31 +116,37 @@ function startWatcher() {
   watcher = watch(() => store.data[device.value.device], (newData: SensorData) => {
     if (mounted) {
 
-      if (store.sensors[device.value.device].vector) {
+      const sensor = store.sensors[device.value.device].find((s) => s.id === device.value.id)!;
+      try {
 
-        (data[0] as Array<number>).push(new Date().getTime());
-        const value = newData[device.value.key].value;
-        if (typeof value === 'object' && 'x' in value && 'y' in value && 'z' in value) {
-          (data[1] as Array<number>).push(value[axis.value as 'x' | 'y' | 'z']);
+        if (sensor.vector) {
+
+          (data[0] as Array<number>).push(new Date().getTime());
+          const value = newData[device.value.key].value;
+          if (typeof value === 'object' && 'x' in value && 'y' in value && 'z' in value) {
+            (data[1] as Array<number>).push(value[axis.value as 'x' | 'y' | 'z']);
+          }
+        } else {
+          (data[0] as Array<number>).push(new Date().getTime());
+          (data[1] as Array<number>).push(newData[device.value.key].value as number);
         }
-      } else {
-        (data[0] as Array<number>).push(new Date().getTime());
-        (data[1] as Array<number>).push(newData[device.value.key].value as number);
+        uplot.value!.setData(data);
+      } catch (e) {
+        console.error(e);
       }
-      uplot.value!.setData(data);
     }
   }, { deep: true });
 }
 
-watch(() => device.value, (newVal) => {
+watch(() => device.value, (newVal, oldVal) => {
   selected.value = newVal.key;
-  console.log(selected.value);
   if (watcher) {
     watcher();
     data[0] = [];
     data[1] = [];
   }
 
+  store.changeSensorInUse(newVal.device, newVal.id, oldVal.device, oldVal.id);
 
   startWatcher()
 });
@@ -137,16 +161,15 @@ onMounted(() => {
 
   mounted = true;
   startWatcher()
-  // setInterval(async () => {
-  //   const temp = await invoke<[number, number, number, number]>('random_data');
-  //   (data[0] as Array<number>).push(temp[0]);
-  //   (data[1] as Array<number>).push(temp[1]);
-  //   (data[2] as Array<number>).push(temp[2]);
-  //   (data[3] as Array<number>).push(temp[3]);
-
-  //   uplot.value!.setData(data);
-  // }, 1000);
 })
+
+onBeforeUnmount(() => {
+  if (watcher) {
+    watcher();
+  }
+
+  store.changeSensorInUse('', '', device.value.device, device.value.id);
+});
 
 function removeCard() {
   storeCard.removeCard(props.card.id);
@@ -160,9 +183,10 @@ function removeCard() {
 
         <v-toolbar-title>Graph</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-select :items="devices" label="Device" density="compact" hide-details variant="outlined" flat width="40%"
-          item-value="value" item-title="title" v-model="device"></v-select>
-        <v-btn @click.stop="removeCard" icon="mdi-delete"></v-btn>
+        <v-select :disabled="store.recording" :items="[{ value: device, title: device.title }, ...devices]"
+          label="Device" density="compact" hide-details variant="outlined" flat width="40%" item-value="value"
+          item-title="title" v-model="device"></v-select>
+        <v-btn @click.stop="removeCard" icon="mdi-delete" :disabled="store.recording"></v-btn>
       </div>
       <div>
 

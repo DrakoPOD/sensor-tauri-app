@@ -2,17 +2,21 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 
+import { type SensorsTypes, type Axis } from './store';
+
 export interface Card {
   id: string;
   activeSensor: string;
-  activeSample: string;
-  axi?: string;
+  activeSample: SensorsTypes;
+  vector?: boolean;
+  axi?: Axis;
 }
 
 interface UpdateCard {
   activeSensor?: string;
-  activeSample?: string;
-  axi?: string;
+  activeSample?: SensorsTypes;
+  vector?: boolean;
+  axi?: Axis;
 }
 
 export const useCardStore = defineStore('cards', () => {
@@ -24,7 +28,7 @@ export const useCardStore = defineStore('cards', () => {
     cards.value.push({
       id: uuidv4(),
       activeSensor: '',
-      activeSample: '',
+      activeSample: 'new',
     });
   };
 
