@@ -6,7 +6,6 @@ import { computed, onMounted, ref, watch, WatchHandle, onBeforeUnmount } from 'v
 
 import { useStore, type SensorData, type SensorsTypes, type Axis } from '@/store/store';
 import { Card, useCardStore } from '@/store/storeCards';
-import { on } from 'events';
 
 const props = defineProps<{
   card: Card;
@@ -29,6 +28,7 @@ const selected = ref<SensorsTypes>('temp');
 let watcher: WatchHandle | null = null;
 
 const el = ref<HTMLElement>();
+const cardDiv = ref<HTMLElement>();
 const uplot = ref<uPlot>();
 const data: uPlot.AlignedData = [
   [],    // x-values (timestamps)
@@ -88,8 +88,7 @@ const opts: uPlot.Options = {
       ticks: { stroke: () => theme.global.current.value.dark ? "rgb(255,255,255,.2)" : "rgb(0,0,0,.2)" },
     },
   ],
-  width: 500,
-  height: 200,
+  ...getSize(),
   series: [
     {
     },
@@ -111,6 +110,14 @@ const opts: uPlot.Options = {
     },
   ],
 };
+
+function getSize() {
+  return {
+    //@ts-ignore next-line
+    width: cardDiv.value ? cardDiv.value!.$el.clientWidth : 500,
+    height: 200,
+  }
+}
 
 function startWatcher() {
   watcher = watch(() => store.data[device.value.device], (newData: SensorData) => {
@@ -161,6 +168,11 @@ onMounted(() => {
 
   mounted = true;
   startWatcher()
+
+  window.addEventListener('resize', () => {
+    uplot.value?.setSize(getSize());
+  });
+  console.log(getSize());
 })
 
 onBeforeUnmount(() => {
@@ -169,6 +181,10 @@ onBeforeUnmount(() => {
   }
 
   store.changeSensorInUse('', '', device.value.device, device.value.id);
+
+  window.removeEventListener('resize', () => {
+    uplot.value?.setSize(getSize());
+  });
 });
 
 function removeCard() {
@@ -177,7 +193,7 @@ function removeCard() {
 </script>
 
 <template>
-  <v-card class="card">
+  <v-card class="card" ref="cardDiv">
     <v-toolbar color="primary" class="toolbar d-flex flex-column ">
       <div class="d-flex  w-100 px-2 ga-1 align-center">
 
@@ -192,7 +208,7 @@ function removeCard() {
 
       </div>
     </v-toolbar>
-    <v-card-item color="secondary">
+    <v-card-item color="secondary" width="100%">
       <div ref="el"></div>
     </v-card-item>
   </v-card>
@@ -200,7 +216,10 @@ function removeCard() {
 
 <style scoped>
 .card {
-  width: 500px;
+  max-width: 500px;
+  min-width: 300px;
+
+  max-height: 400px;
 }
 
 .toolbar {
