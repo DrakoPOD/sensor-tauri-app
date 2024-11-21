@@ -141,6 +141,11 @@ function startWatcher() {
       } catch (e) {
         console.error(e);
       }
+      // limit the data to 100 points
+      if (data[0].length > 100) {
+        (data[0] as Array<number>).shift();
+        (data[1] as Array<number>).shift();
+      }
     }
   }, { deep: true });
 }
@@ -196,7 +201,6 @@ function removeCard() {
   <v-card class="card" ref="cardDiv">
     <v-toolbar color="primary" class="toolbar d-flex flex-column ">
       <div class="d-flex  w-100 px-2 ga-1 align-center">
-
         <v-toolbar-title>Graph</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-select :disabled="store.recording" :items="[{ value: device, title: device.title }, ...devices]"

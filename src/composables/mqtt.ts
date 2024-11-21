@@ -37,7 +37,7 @@ export const startMqtt = () => {
       );
 
       currentMilis = new Date().getTime();
-    }, 1000);
+    }, 100);
   });
 
   client.on('message', (topic, message) => {
