@@ -1,10 +1,10 @@
-import mqtt from 'mqtt';
+import mqtt, { type MqttClient } from 'mqtt';
 
 import { useStore } from '@/store/store';
 
-const client = mqtt.connect('ws://localhost:8083/mqtt');
+export const startMqtt = (host: string) => {
+  const client = mqtt.connect(host);
 
-export const startMqtt = () => {
   const store = useStore();
 
   client.on('connect', () => {
@@ -37,7 +37,7 @@ export const startMqtt = () => {
       );
 
       currentMilis = new Date().getTime();
-    }, 1000);
+    }, 100);
   });
 
   client.on('message', (topic, message) => {
@@ -50,7 +50,6 @@ export const startMqtt = () => {
       console.error('error parsing message', e);
     }
   });
-};
-export const useMqtt = () => {
-  return { client };
+
+  return client;
 };
