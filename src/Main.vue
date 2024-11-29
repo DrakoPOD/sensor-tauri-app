@@ -4,6 +4,8 @@ import { startMqtt } from '@/composables/mqtt';
 import { useTheme } from 'vuetify';
 
 import GraphView from '@/views/GraphView.vue';
+import Experiments from '@/views/Experiments.vue';
+import Recordings from '@/views/Recordings.vue';
 
 import { useCardStore } from './store/storeCards';
 import { useStore } from './store/store';
@@ -58,7 +60,9 @@ function toggleTheme() {
 
       <v-main>
         <v-container>
-          <GraphView />
+          <GraphView v-if="false" />
+          <Experiments v-if="true" />
+          <Recordings v-if="false" />
         </v-container>
       </v-main>
       <v-footer elevation="10" class="action-bar" app>

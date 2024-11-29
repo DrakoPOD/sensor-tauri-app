@@ -10,6 +10,23 @@
     "shell:allow-open",
     "websocket:default",
     "store:default",
-    "fs:default"
+    "fs:allow-open",
+    "fs:allow-write",
+    "fs:allow-read",
+    "fs:allow-rename",
+    "fs:allow-mkdir",
+    "fs:allow-remove",
+    "fs:allow-write-text-file",
+    "fs:allow-applocaldata-write",
+    "fs:allow-applocaldata-read",
+    "fs:allow-applocaldata-read-recursive",
+    {
+      "identifier": "fs:scope-applocaldata-recursive",
+      "allow": [
+        {
+          "path": "$APPLOCALDATA/experiments/**"
+        }
+      ]
+    }
   ]
 }
