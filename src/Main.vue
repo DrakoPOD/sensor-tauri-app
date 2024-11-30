@@ -38,7 +38,7 @@ function toggleTheme() {
   <v-responsive>
     <v-app>
 
-      <v-app-bar title="My App">
+      <v-app-bar title="Sin Experimento">
         <template v-slot:prepend>
           <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
         </template>

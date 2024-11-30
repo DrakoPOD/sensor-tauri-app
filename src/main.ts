@@ -1,5 +1,6 @@
 import { createApp } from 'vue';
 import { load } from '@tauri-apps/plugin-store';
+import { mkdir, exists, BaseDirectory } from '@tauri-apps/plugin-fs';
 
 import 'uplot/dist/uPlot.min.css';
 
@@ -31,6 +32,40 @@ const vuetify = createVuetify({
   // components,
   // directives,
 });
+
+try {
+  const existsExperiments = await exists('experiments', {
+    baseDir: BaseDirectory.AppLocalData,
+  });
+
+  if (!existsExperiments) {
+    await mkdir('experiments', {
+      baseDir: BaseDirectory.AppLocalData,
+    });
+  }
+
+  const existsImages = await exists('experiments/images', {
+    baseDir: BaseDirectory.AppLocalData,
+  });
+
+  if (!existsImages) {
+    await mkdir('experiments/images', {
+      baseDir: BaseDirectory.AppLocalData,
+    });
+  }
+
+  const existsVideos = await exists('experiments/videos', {
+    baseDir: BaseDirectory.AppLocalData,
+  });
+
+  if (!existsVideos) {
+    await mkdir('experiments/videos', {
+      baseDir: BaseDirectory.AppLocalData,
+    });
+  }
+} catch (error) {
+  console.error(error);
+}
 
 const pinia = createPinia();
 
