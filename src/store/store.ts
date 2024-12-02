@@ -32,7 +32,7 @@ interface SimpleData {
 interface VectorData {
   value: {
     [key in Axis]: number;
-  };My App
+  };
   unit: string;
   vector: true;
 }
@@ -60,7 +60,7 @@ export interface Experiment {
   snapshots: Record<string, SensorData>[];
   texts: Record<string, string>;
   images: Record<string, string>;
-} 
+}
 
 export interface Recording {
   id: string;
@@ -108,6 +108,8 @@ export const useStore = defineStore('sensors', () => {
       },
     ],
   });
+
+  const selectedExperiment = ref<Experiment | null>(null);
 
   const data = ref<Data>({});
   const recording = ref(false);
@@ -189,6 +191,7 @@ export const useStore = defineStore('sensors', () => {
   return {
     sensors,
     data,
+    selectedExperiment,
     recording,
     recordedData,
     addSensor,
